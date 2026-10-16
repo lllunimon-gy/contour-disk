@@ -60,4 +60,13 @@ final class ScannerTests: XCTestCase {
         try put("a", count: 1)
         XCTAssertThrowsError(try DiskScanner().scan(root: root.appendingPathComponent("a")))
     }
+    func testRelativePathsRemainCorrectWhenRootIsASymbolicLink() throws {
+        try put("folder/item.bin", count: 11)
+        let alias = root.deletingLastPathComponent().appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: root)
+        defer { try? FileManager.default.removeItem(at: alias) }
+        let snapshot = try DiskScanner().scan(root: alias)
+        XCTAssertEqual(snapshot.files.map(\.path), ["folder/item.bin"])
+        XCTAssertEqual(snapshot.bytesByTopDirectory["folder"], 11)
+    }
 }

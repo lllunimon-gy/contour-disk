@@ -114,12 +114,13 @@ public struct DiskScanner {
             if info.isSymbolicLink != 0 { links += 1; enumerator.skipDescendants(); continue }
             guard info.isRegular != 0 else { continue }
             // Defense against an already-replaced ancestor; this isn't an adversarial sandbox API.
-            guard url.resolvingSymlinksInPath().path.hasPrefix(prefix) else {
+            let resolvedPath = url.resolvingSymlinksInPath().path
+            guard resolvedPath.hasPrefix(prefix) else {
                 enumerator.skipDescendants()
                 issues.append(ScanIssue(path: url.path, reason: "resolved outside root")); continue
             }
             let identity = "\(info.device):\(info.inode)"
-            records.append(FileRecord(path: String(url.path.dropFirst(prefix.count)),
+            records.append(FileRecord(path: String(resolvedPath.dropFirst(prefix.count)),
                                       logicalBytes: info.logicalBytes, allocatedBytes: info.allocatedBytes,
                                       modifiedAt: info.modifiedAt, identity: identity,
                                       countsTowardTotal: identities.insert(identity).inserted))
